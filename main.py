@@ -1,6 +1,6 @@
 # main.py
 
-''' 
+'''
   TODO:
     - add time segments for shows/commercials
       - morning/eventing, saturdays, etc
@@ -9,8 +9,10 @@
     - get ffmpeg to work
     - stream out to ip
     - stream out to hdmi out
+    - read in a file with list of shows and commercials
+        so this can be more universal friendly
 '''
-    
+
 import os
 import time
 #import ffmpeg
@@ -18,6 +20,7 @@ import time
 import datetime
 from random import seed
 from random import randint
+import sys
 
 class Show:
   def __init__(self, name, path):
@@ -37,10 +40,10 @@ class Show:
       else:
         exts = e.split('.')
         if exts[len(exts) - 1] == 'mp4' or exts[len(exts) - 1] == 'avi' or exts[len(exts) - 1] == 'mpg' or exts[len(exts) - 1] == 'wmv':
-          self.episodes.append('tv/' + self.path + '/' + e)
+          self.episodes.append(os.getcwd() + '/' + e)
         else:
           print('WARNING: ' + e + ' is invalid')
-    
+
     os.chdir('..')
 
 class Commercial:
@@ -48,7 +51,6 @@ class Commercial:
     self.category = category
     self.path = path
     self.spots = []
-    self.it = 0
 
   def AddSpots(self, path):
     os.chdir(path)
@@ -64,7 +66,7 @@ class Commercial:
           self.spots.append('commercials/' + self.path + '/' + s)
         else:
           print('WARNING: ' + s + ' is invalid')
-    
+
     os.chdir('..')
 
 # globals
@@ -119,30 +121,41 @@ def Initialize():
   os.chdir('..')
 
 def Run():
-  commercial_count = 0
-  seed(1)
+  count = 0
+  com_count = 0
+  seed(sys.argv[1])
 
-  while commercial_count < 4:
-    i = randint(0, len(commercials))
-    spot = commercials[i].spots[commercials[i].it]
-    os.system('ffmpeg -re -i \'' + spot + '\' -f mpegts \"udp://127.0.0.1:2002\"')
-    commercials[i].it = commercials[i].it + 1
-    commercial_count = commercial_count + 1
+  while count < 13:
+    if com_count < 2:
+      com = randint(0, len(commercials))
+      spt = randint(0, len(commercials[com].spots))
+      spot = commercials[com].spots[spt]
+      print('num commercials: ' + str(len(commercials)) + ' commercial: ' + str(com))
+      print('num spots: ' + str(len(commercials[com].spots)) + ' spot: ' + str(spt))
+      os.system('ffmpeg -re -i \'' + spot + '\' -f mpegts \"udp://127.0.0.1:2002\"')
+      com_count = com_count + 1
+    else:
+      shw = randint(0, len(shows))
+      ep = randint(0, len(shows[shw].episodes))
+      print('num shows: ' + str(len(shows)) + ' show: ' + str(shw))
+      print('num episodes: ' + str(len(shows[shw].episodes)) + ' ep: ' + str(ep))
+      episode = shows[shw].episodes[ep]
+      os.system('ffmpeg -re -i \'' + episode + '\' -f mpegts \"udp://127.0.0.1:2002\"')
+      com_count = 0
+    count = count + 1
 
-'''
-  for commercial in commercials:
-      for spot in commercial.spots:
-        os.system('ffmpeg -re -i \'' + spot + '\' -f mpegts \"udp://127.0.0.1:2002\"')
-        time.sleep(1)
-'''
 
 def main():
 
   # add tv shows and commercials
   Initialize()
 
-  # air the channel
-  Run()
+  if sys.argv[1] == 'print':
+    for ep in shows[2].episodes:
+      print(ep)
+  else:
+    # air the channel
+    Run()
 
 if __name__ == "__main__":
   main()
