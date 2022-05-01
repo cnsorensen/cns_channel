@@ -1,4 +1,6 @@
 *.swp
 *.avi
+*.o
 tv/*
 commercials/* 
+cns_channel
